@@ -20,6 +20,11 @@ class Event(models.Model):
         ('virtual', 'Virtual'),
         ('hibrido', 'Híbrido'),
     ]
+    
+    TYPE_CHOICES = [
+        ('competencia', 'Competencia'),
+        ('difusor', 'Difusor'),
+    ]
 
     name = models.CharField(max_length=200)
     date = models.DateField()
@@ -28,7 +33,7 @@ class Event(models.Model):
     location = models.CharField(max_length=200, blank=True)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    type = models.CharField(max_length=50)
+    type = models.CharField(max_length=50, choices=TYPE_CHOICES)
     image = models.URLField()
     description = models.TextField()
     link = models.URLField(blank=True)

@@ -80,7 +80,7 @@ def fix_frontend_issues():
                 "location": "Auditorio Principal",
                 "organization": tech_org or Organization.objects.first(),
                 "category": tech_cat or Category.objects.first(),
-                "type": "workshop",
+                "type": "difusor",
                 "image": "https://images.unsplash.com/photo-1555066931-4365d14bab8c",
                 "description": "Aprende Python desde cero en este workshop práctico.",
                 "link": "https://ejemplo.com/workshop-python"
@@ -93,7 +93,7 @@ def fix_frontend_issues():
                 "location": "Plataforma Zoom",
                 "organization": uni_org or Organization.objects.first(),
                 "category": tech_cat or Category.objects.first(),
-                "type": "conferencia",
+                "type": "difusor",
                 "image": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e",
                 "description": "Conferencia sobre inteligencia artificial y machine learning.",
                 "link": "https://ejemplo.com/conferencia-ia"
@@ -106,7 +106,7 @@ def fix_frontend_issues():
                 "location": "Campus Universitario",
                 "organization": uni_org or Organization.objects.first(),
                 "category": edu_cat or Category.objects.first(),
-                "type": "seminario",
+                "type": "difusor",
                 "image": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f",
                 "description": "Seminario sobre herramientas digitales en la educación.",
                 "link": "https://ejemplo.com/seminario-educacion"
@@ -119,7 +119,7 @@ def fix_frontend_issues():
                 "location": "Centro de Convenciones",
                 "organization": tech_org or Organization.objects.first(),
                 "category": tech_cat or Category.objects.first(),
-                "type": "hackathon",
+                "type": "competencia",
                 "image": "https://images.unsplash.com/photo-1540575467063-178a50c2df87",
                 "description": "Hackathon nacional para desarrolladores y diseñadores.",
                 "link": "https://ejemplo.com/hackathon-2025"
@@ -132,7 +132,7 @@ def fix_frontend_issues():
                 "location": "Microsoft Teams",
                 "organization": general_org or Organization.objects.first(),
                 "category": general_cat or Category.objects.first(),
-                "type": "mesa_redonda",
+                "type": "difusor",
                 "image": "https://images.unsplash.com/photo-1515187029135-18ee286d815b",
                 "description": "Mesa redonda con expertos sobre el futuro de la tecnología.",
                 "link": "https://ejemplo.com/mesa-redonda"
