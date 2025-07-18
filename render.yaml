@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: lihwec-backend
+    env: python
+    plan: free
+    buildCommand: "chmod +x build.sh && ./build.sh"
+    startCommand: "cd lihwec_backend && python manage.py runserver 0.0.0.0:$PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: CORS_ALLOW_ALL
+        value: "False"
