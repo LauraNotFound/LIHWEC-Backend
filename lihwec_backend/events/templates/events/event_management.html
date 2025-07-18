@@ -1,0 +1,341 @@
+{% extends 'events/base.html' %}
+
+{% block title %}Gestión de Eventos - Panel Administrativo LIHWEC{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-calendar"></i> Gestión de Eventos</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#eventModal"
+                onclick="openEventModal()">
+                <i class="fas fa-plus"></i> Nuevo Evento
+            </button>
+            <button type="button" class="btn btn-outline-secondary" onclick="loadEvents()">
+                <i class="fas fa-sync-alt"></i> Actualizar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Eventos -->
+<div class="card">
+    <div class="card-body">
+        <div class="loading text-center py-4">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p>Cargando eventos...</p>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover" id="eventsTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Modalidad</th>
+                        <th>Ubicación</th>
+                        <th>Organización</th>
+                        <th>Categoría</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="eventsTableBody">
+                    {% for event in events %}
+                    <tr id="event-{{ event.id }}">
+                        <td>{{ event.id }}</td>
+                        <td>{{ event.name }}</td>
+                        <td>{{ event.date|date:"d/m/Y" }}</td>
+                        <td>{{ event.time|time:"H:i" }}</td>
+                        <td>
+                            <span
+                                class="badge bg-{% if event.modality == 'virtual' %}info{% elif event.modality == 'presencial' %}success{% else %}warning{% endif %}">
+                                {{ event.get_modality_display }}
+                            </span>
+                        </td>
+                        <td>{{ event.location|truncatechars:30 }}</td>
+                        <td>{{ event.organization.name }}</td>
+                        <td>{{ event.category.display_name }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="editEvent({{ event.id }})"
+                                    title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-danger"
+                                    onclick="deleteEvent({{ event.id }}, '{{ event.name }}')" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if not events %}
+        <div class="text-center py-4" id="noEventsMessage">
+            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+            <p class="text-muted">No hay eventos registrados</p>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#eventModal"
+                onclick="openEventModal()">
+                Crear Primer Evento
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para Crear/Editar Evento -->
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalTitle">
+                    <i class="fas fa-calendar"></i> Nuevo Evento
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="eventForm">
+                    <input type="hidden" id="eventId">
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="eventName" class="form-label">Nombre del Evento *</label>
+                                <input type="text" class="form-control" id="eventName" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="eventType" class="form-label">Tipo *</label>
+                                <input type="text" class="form-control" id="eventType" required
+                                    placeholder="ej: conferencia">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="eventDate" class="form-label">Fecha *</label>
+                                <input type="date" class="form-control" id="eventDate" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="eventTime" class="form-label">Hora *</label>
+                                <input type="time" class="form-control" id="eventTime" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="eventModality" class="form-label">Modalidad *</label>
+                                <select class="form-control" id="eventModality" required>
+                                    <option value="">Seleccionar modalidad</option>
+                                    <option value="presencial">Presencial</option>
+                                    <option value="virtual">Virtual</option>
+                                    <option value="hibrido">Híbrido</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="eventLocation" class="form-label">Ubicación</label>
+                        <input type="text" class="form-control" id="eventLocation" placeholder="Dirección o enlace">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="eventOrganization" class="form-label">Organización *</label>
+                                <select class="form-control" id="eventOrganization" required>
+                                    <option value="">Seleccionar organización</option>
+                                    {% for org in organizations %}
+                                    <option value="{{ org.name }}">{{ org.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="eventCategory" class="form-label">Categoría *</label>
+                                <select class="form-control" id="eventCategory" required>
+                                    <option value="">Seleccionar categoría</option>
+                                    {% for cat in categories %}
+                                    <option value="{{ cat.name }}">{{ cat.display_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="eventImage" class="form-label">URL de Imagen *</label>
+                        <input type="url" class="form-control" id="eventImage" required
+                            placeholder="https://ejemplo.com/imagen.jpg">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="eventDescription" class="form-label">Descripción *</label>
+                        <textarea class="form-control" id="eventDescription" rows="3" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="eventLink" class="form-label">Enlace (opcional)</label>
+                        <input type="url" class="form-control" id="eventLink" placeholder="https://ejemplo.com/evento">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveEvent()">
+                    <i class="fas fa-save"></i> Guardar Evento
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentEventId = null;
+
+    function openEventModal(eventId = null) {
+        currentEventId = eventId;
+        const modal = document.getElementById('eventModal');
+        const title = document.getElementById('eventModalTitle');
+        const form = document.getElementById('eventForm');
+
+        // Resetear formulario
+        form.reset();
+        document.getElementById('eventId').value = '';
+
+        if (eventId) {
+            title.innerHTML = '<i class="fas fa-edit"></i> Editar Evento';
+            loadEventData(eventId);
+        } else {
+            title.innerHTML = '<i class="fas fa-plus"></i> Nuevo Evento';
+        }
+    }
+
+    async function loadEventData(eventId) {
+        try {
+            const response = await fetch(`/api/events/${eventId}/`);
+            const event = await response.json();
+
+            if (response.ok) {
+                document.getElementById('eventId').value = event.id;
+                document.getElementById('eventName').value = event.name;
+                document.getElementById('eventDate').value = event.date;
+                document.getElementById('eventTime').value = event.time;
+                document.getElementById('eventModality').value = event.modality;
+                document.getElementById('eventLocation').value = event.location || '';
+                document.getElementById('eventOrganization').value = event.organization;
+                document.getElementById('eventCategory').value = event.category;
+                document.getElementById('eventType').value = event.type;
+                document.getElementById('eventImage').value = event.image;
+                document.getElementById('eventDescription').value = event.description;
+                document.getElementById('eventLink').value = event.link || '';
+            } else {
+                showAlert('Error al cargar los datos del evento', 'danger');
+            }
+        } catch (error) {
+            showAlert('Error de conexión al cargar el evento', 'danger');
+        }
+    }
+
+    async function saveEvent() {
+        const form = document.getElementById('eventForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        showLoading(true);
+
+        const eventData = {
+            name: document.getElementById('eventName').value,
+            date: document.getElementById('eventDate').value,
+            time: document.getElementById('eventTime').value,
+            modality: document.getElementById('eventModality').value,
+            location: document.getElementById('eventLocation').value,
+            organization: document.getElementById('eventOrganization').value,
+            category: document.getElementById('eventCategory').value,
+            type: document.getElementById('eventType').value,
+            image: document.getElementById('eventImage').value,
+            description: document.getElementById('eventDescription').value,
+            link: document.getElementById('eventLink').value
+        };
+
+        try {
+            let url, method;
+            if (currentEventId) {
+                url = `/admin/api/events/${currentEventId}/`;
+                method = 'PUT';
+            } else {
+                url = '/admin/api/events/';
+                method = 'POST';
+            }
+
+            const result = await apiRequest(url, method, eventData);
+
+            if (result.success) {
+                showAlert(result.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide();
+                loadEvents();
+            } else {
+                showAlert(result.error || 'Error al guardar el evento', 'danger');
+            }
+        } catch (error) {
+            showAlert('Error de conexión', 'danger');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    async function editEvent(eventId) {
+        openEventModal(eventId);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('eventModal')).show();
+    }
+
+    async function deleteEvent(eventId, eventName) {
+        if (!confirm(`¿Estás seguro de eliminar el evento "${eventName}"?`)) {
+            return;
+        }
+
+        showLoading(true);
+
+        try {
+            const result = await apiRequest(`/admin/api/events/${eventId}/`, 'DELETE');
+
+            if (result.success) {
+                showAlert(result.message, 'success');
+                document.getElementById(`event-${eventId}`).remove();
+
+                // Verificar si la tabla está vacía
+                const tbody = document.getElementById('eventsTableBody');
+                if (tbody.children.length === 0) {
+                    document.getElementById('eventsTable').style.display = 'none';
+                    document.getElementById('noEventsMessage').style.display = 'block';
+                }
+            } else {
+                showAlert(result.error || 'Error al eliminar el evento', 'danger');
+            }
+        } catch (error) {
+            showAlert('Error de conexión', 'danger');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    function loadEvents() {
+        location.reload();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,213 @@
+{% extends 'events/base.html' %}
+
+{% block title %}Gestión de Categorías - Panel Administrativo LIHWEC{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-tags"></i> Gestión de Categorías</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal"
+                onclick="openCategoryModal()">
+                <i class="fas fa-plus"></i> Nueva Categoría
+            </button>
+            <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
+                <i class="fas fa-sync-alt"></i> Actualizar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Categorías -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Nombre para Mostrar</th>
+                        <th>Eventos</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in categories %}
+                    <tr id="cat-{{ cat.id }}">
+                        <td>{{ cat.id }}</td>
+                        <td><code>{{ cat.name }}</code></td>
+                        <td>{{ cat.display_name }}</td>
+                        <td>
+                            <span class="badge bg-primary">{{ cat.event_set.count }} eventos</span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="editCategory({{ cat.id }})"
+                                    title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-danger"
+                                    onclick="deleteCategory({{ cat.id }}, '{{ cat.name }}')" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if not categories %}
+        <div class="text-center py-4">
+            <i class="fas fa-tags fa-3x text-muted mb-3"></i>
+            <p class="text-muted">No hay categorías registradas</p>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal"
+                onclick="openCategoryModal()">
+                Crear Primera Categoría
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para Crear/Editar Categoría -->
+<div class="modal fade" id="categoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="categoryModalTitle">
+                    <i class="fas fa-tags"></i> Nueva Categoría
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="categoryForm">
+                    <input type="hidden" id="categoryId">
+
+                    <div class="mb-3">
+                        <label for="categoryName" class="form-label">Nombre de la Categoría *</label>
+                        <input type="text" class="form-control" id="categoryName" required placeholder="ej: tecnologia">
+                        <div class="form-text">Nombre en minúsculas, sin espacios (se usa en la API)</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="categoryDisplayName" class="form-label">Nombre para Mostrar *</label>
+                        <input type="text" class="form-control" id="categoryDisplayName" required
+                            placeholder="ej: Tecnología">
+                        <div class="form-text">Nombre que se muestra al público</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveCategory()">
+                    <i class="fas fa-save"></i> Guardar Categoría
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentCategoryId = null;
+
+    function openCategoryModal(categoryId = null) {
+        currentCategoryId = categoryId;
+        const modal = document.getElementById('categoryModal');
+        const title = document.getElementById('categoryModalTitle');
+        const form = document.getElementById('categoryForm');
+
+        // Resetear formulario
+        form.reset();
+        document.getElementById('categoryId').value = '';
+
+        if (categoryId) {
+            title.innerHTML = '<i class="fas fa-edit"></i> Editar Categoría';
+            loadCategoryData(categoryId);
+        } else {
+            title.innerHTML = '<i class="fas fa-plus"></i> Nueva Categoría';
+        }
+    }
+
+    async function loadCategoryData(categoryId) {
+        try {
+            const response = await fetch(`/api/categories/${categoryId}/`);
+            const category = await response.json();
+
+            if (response.ok) {
+                document.getElementById('categoryId').value = category.id;
+                document.getElementById('categoryName').value = category.name;
+                document.getElementById('categoryDisplayName').value = category.display_name;
+            } else {
+                showAlert('Error al cargar los datos de la categoría', 'danger');
+            }
+        } catch (error) {
+            showAlert('Error de conexión al cargar la categoría', 'danger');
+        }
+    }
+
+    async function saveCategory() {
+        const form = document.getElementById('categoryForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const categoryData = {
+            name: document.getElementById('categoryName').value,
+            display_name: document.getElementById('categoryDisplayName').value
+        };
+
+        try {
+            let url, method;
+            if (currentCategoryId) {
+                url = `/admin/api/categories/${currentCategoryId}/`;
+                method = 'PUT';
+            } else {
+                url = '/admin/api/categories/';
+                method = 'POST';
+            }
+
+            const result = await apiRequest(url, method, categoryData);
+
+            if (result.success) {
+                showAlert(result.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('categoryModal')).hide();
+                location.reload();
+            } else {
+                showAlert(result.error || 'Error al guardar la categoría', 'danger');
+            }
+        } catch (error) {
+            showAlert('Error de conexión', 'danger');
+        }
+    }
+
+    async function editCategory(categoryId) {
+        openCategoryModal(categoryId);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('categoryModal')).show();
+    }
+
+    async function deleteCategory(categoryId, categoryName) {
+        if (!confirm(`¿Estás seguro de eliminar la categoría "${categoryName}"? Esto también eliminará todos los eventos asociados.`)) {
+            return;
+        }
+
+        try {
+            const result = await apiRequest(`/admin/api/categories/${categoryId}/`, 'DELETE');
+
+            if (result.success) {
+                showAlert(result.message, 'success');
+                document.getElementById(`cat-${categoryId}`).remove();
+            } else {
+                showAlert(result.error || 'Error al eliminar la categoría', 'danger');
+            }
+        } catch (error) {
+            showAlert('Error de conexión', 'danger');
+        }
+    }
+</script>
+{% endblock %}

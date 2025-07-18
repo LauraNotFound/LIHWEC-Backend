@@ -1,0 +1,211 @@
+{% extends 'events/base.html' %}
+
+{% block title %}Gestión de Organizaciones - Panel Administrativo LIHWEC{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-building"></i> Gestión de Organizaciones</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#organizationModal"
+                onclick="openOrganizationModal()">
+                <i class="fas fa-plus"></i> Nueva Organización
+            </button>
+            <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
+                <i class="fas fa-sync-alt"></i> Actualizar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Organizaciones -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Eventos</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for org in organizations %}
+                    <tr id="org-{{ org.id }}">
+                        <td>{{ org.id }}</td>
+                        <td>{{ org.name }}</td>
+                        <td>{{ org.description|truncatechars:50 }}</td>
+                        <td>
+                            <span class="badge bg-primary">{{ org.event_set.count }} eventos</span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="editOrganization({{ org.id }})"
+                                    title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-danger"
+                                    onclick="deleteOrganization({{ org.id }}, '{{ org.name }}')" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if not organizations %}
+        <div class="text-center py-4">
+            <i class="fas fa-building fa-3x text-muted mb-3"></i>
+            <p class="text-muted">No hay organizaciones registradas</p>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#organizationModal"
+                onclick="openOrganizationModal()">
+                Crear Primera Organización
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para Crear/Editar Organización -->
+<div class="modal fade" id="organizationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="organizationModalTitle">
+                    <i class="fas fa-building"></i> Nueva Organización
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="organizationForm">
+                    <input type="hidden" id="organizationId">
+
+                    <div class="mb-3">
+                        <label for="organizationName" class="form-label">Nombre de la Organización *</label>
+                        <input type="text" class="form-control" id="organizationName" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="organizationDescription" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="organizationDescription" rows="3"
+                            placeholder="Descripción de la organización"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveOrganization()">
+                    <i class="fas fa-save"></i> Guardar Organización
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentOrganizationId = null;
+
+    function openOrganizationModal(organizationId = null) {
+        currentOrganizationId = organizationId;
+        const modal = document.getElementById('organizationModal');
+        const title = document.getElementById('organizationModalTitle');
+        const form = document.getElementById('organizationForm');
+
+        // Resetear formulario
+        form.reset();
+        document.getElementById('organizationId').value = '';
+
+        if (organizationId) {
+            title.innerHTML = '<i class="fas fa-edit"></i> Editar Organización';
+            loadOrganizationData(organizationId);
+        } else {
+            title.innerHTML = '<i class="fas fa-plus"></i> Nueva Organización';
+        }
+    }
+
+    async function loadOrganizationData(organizationId) {
+        try {
+            const response = await fetch(`/api/organizations/${organizationId}/`);
+            const organization = await response.json();
+
+            if (response.ok) {
+                document.getElementById('organizationId').value = organization.id;
+                document.getElementById('organizationName').value = organization.name;
+                document.getElementById('organizationDescription').value = organization.description || '';
+            } else {
+                showAlert('Error al cargar los datos de la organización', 'danger');
+            }
+        } catch (error) {
+            showAlert('Error de conexión al cargar la organización', 'danger');
+        }
+    }
+
+    async function saveOrganization() {
+        const form = document.getElementById('organizationForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const organizationData = {
+            name: document.getElementById('organizationName').value,
+            description: document.getElementById('organizationDescription').value || ''
+        };
+
+        try {
+            let url, method;
+            if (currentOrganizationId) {
+                url = `/admin/api/organizations/${currentOrganizationId}/`;
+                method = 'PUT';
+            } else {
+                url = '/admin/api/organizations/';
+                method = 'POST';
+            }
+
+            const result = await apiRequest(url, method, organizationData);
+
+            if (result.success) {
+                showAlert(result.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('organizationModal')).hide();
+                location.reload();
+            } else {
+                showAlert(result.error || 'Error al guardar la organización', 'danger');
+            }
+        } catch (error) {
+            showAlert('Error de conexión', 'danger');
+        }
+    }
+
+    async function editOrganization(organizationId) {
+        openOrganizationModal(organizationId);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('organizationModal')).show();
+    }
+
+    async function deleteOrganization(organizationId, organizationName) {
+        if (!confirm(`¿Estás seguro de eliminar la organización "${organizationName}"? Esto también eliminará todos los eventos asociados.`)) {
+            return;
+        }
+
+        try {
+            const result = await apiRequest(`/admin/api/organizations/${organizationId}/`, 'DELETE');
+
+            if (result.success) {
+                showAlert(result.message, 'success');
+                document.getElementById(`org-${organizationId}`).remove();
+            } else {
+                showAlert(result.error || 'Error al eliminar la organización', 'danger');
+            }
+        } catch (error) {
+            showAlert('Error de conexión', 'danger');
+        }
+    }
+</script>
+{% endblock %}
