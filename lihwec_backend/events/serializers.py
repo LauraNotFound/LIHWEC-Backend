@@ -2,8 +2,14 @@ from rest_framework import serializers
 from .models import Event, Organization, Category
 
 class EventSerializer(serializers.ModelSerializer):
-    organization = serializers.CharField(source='organization.name', read_only=True)
-    category = serializers.CharField(source='category.name', read_only=True)
+    organization = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=Organization.objects.all()
+    )
+    category = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=Category.objects.all()
+    )
 
     class Meta:
         model = Event
