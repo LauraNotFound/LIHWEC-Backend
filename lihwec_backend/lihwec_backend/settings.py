@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +21,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-t%yrf1848331&zrq+ag-#8*$d2#iw0+wdam4!i%n#((3pgrpxl'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-t%yrf1848331&zrq+ag-#8*$d2#iw0+wdam4!i%n#((3pgrpxl')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '.onrender.com',  # Para Render
+    '.vercel.app',    # Para Vercel
+    '.herokuapp.com', # Para Heroku
+] + os.environ.get('ALLOWED_HOSTS', '').split(',')
 
 
 # Application definition
@@ -68,10 +75,12 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "http://127.0.0.1:8080",
+    "https://lauranotfound.github.io",  # Tu GitHub Pages
 ]
 
-# Para desarrollo, permitir todos los orígenes
-CORS_ALLOW_ALL_ORIGINS = True
+# Para desarrollo local, permitir todos los orígenes
+# En producción, esto debería ser False para mayor seguridad
+CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL', 'True') == 'True'
 
 ROOT_URLCONF = 'lihwec_backend.urls'
 
@@ -96,12 +105,21 @@ WSGI_APPLICATION = 'lihwec_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Configuración de base de datos: SQLite para desarrollo, PostgreSQL para producción
+if os.environ.get('DATABASE_URL'):
+    # Configuración para producción (PostgreSQL en Render)
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.parse(os.environ.get('DATABASE_URL'))
     }
-}
+else:
+    # Configuración para desarrollo (SQLite)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
