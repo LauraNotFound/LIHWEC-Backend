@@ -13,6 +13,10 @@ pip install -r requirements.txt
 echo "📁 Cambiando al directorio del proyecto..."
 cd lihwec_backend
 
+# Crear directorio para archivos estáticos si no existe
+echo "📂 Creando directorio para archivos estáticos..."
+mkdir -p staticfiles
+
 # Recopilar archivos estáticos
 echo "🎨 Recopilando archivos estáticos..."
 python manage.py collectstatic --no-input
