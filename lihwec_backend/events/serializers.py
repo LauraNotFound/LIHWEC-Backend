@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Event, Organization, Category
+from .models import Event, Organization, Category, Type
 
 class EventSerializer(serializers.ModelSerializer):
     organization = serializers.SlugRelatedField(
@@ -9,6 +9,10 @@ class EventSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
         slug_field='name',
         queryset=Category.objects.all()
+    )
+    type = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=Type.objects.all()
     )
 
     class Meta:
@@ -23,4 +27,9 @@ class OrganizationSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
+        fields = '__all__'
+
+class TypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Type
         fields = '__all__'

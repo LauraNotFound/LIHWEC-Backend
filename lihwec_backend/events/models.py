@@ -14,6 +14,12 @@ class Organization(models.Model):
     def __str__(self):
         return self.name
 
+class Type(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+
 class Event(models.Model):
     MODALITY_CHOICES = [
         ('presencial', 'Presencial'),
@@ -33,7 +39,7 @@ class Event(models.Model):
     location = models.CharField(max_length=200, blank=True)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    type = models.CharField(max_length=50, choices=TYPE_CHOICES)
+    type = models.ForeignKey(Type, on_delete=models.CASCADE)
     image = models.URLField()
     description = models.TextField()
     link = models.URLField(blank=True)

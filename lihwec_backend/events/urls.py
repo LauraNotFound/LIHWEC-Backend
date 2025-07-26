@@ -16,7 +16,7 @@
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import EventViewSet, CategoryViewSet, OrganizationViewSet, EventSearchView, EventFilterView
+from .views import EventViewSet, CategoryViewSet, OrganizationViewSet, TypeViewSet, EventSearchView, EventFilterView
 from .admin_views import (
     AdminPanelView, EventManagementView, OrganizationManagementView, CategoryManagementView,
     AdminEventAPIView, AdminOrganizationAPIView, AdminCategoryAPIView
@@ -25,6 +25,7 @@ from .admin_views import (
 router = DefaultRouter()
 router.register(r'categories', CategoryViewSet)
 router.register(r'organizations', OrganizationViewSet)
+router.register(r'types', TypeViewSet)
 # No registramos events en el router para evitar conflictos con las rutas personalizadas
 
 urlpatterns = [

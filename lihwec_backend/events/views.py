@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from django.http import JsonResponse
-from .models import Event, Organization, Category
-from .serializers import EventSerializer, OrganizationSerializer, CategorySerializer
+from .models import Event, Organization, Category, Type
+from .serializers import EventSerializer, OrganizationSerializer, CategorySerializer, TypeSerializer
 import logging
 
 logger = logging.getLogger(__name__)
@@ -16,8 +16,8 @@ class EventListCreateView(generics.ListCreateAPIView):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['category__name', 'modality', 'organization__name']
-    search_fields = ['name', 'description', 'organization__name', 'location', 'type']
+    filterset_fields = ['category__name', 'modality', 'organization__name', 'type__name']
+    search_fields = ['name', 'description', 'organization__name', 'location', 'type__name']
 
 class EventDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Event.objects.all()
@@ -36,7 +36,7 @@ class EventSearchView(generics.ListAPIView):
                 Q(description__icontains=query) |
                 Q(organization__name__icontains=query) |
                 Q(location__icontains=query) |
-                Q(type__icontains=query)
+                Q(type__name__icontains=query)
             )
             logger.info(f"EventSearchView: Encontrados {queryset.count()} eventos")
             return queryset
@@ -75,21 +75,12 @@ class EventFilterView(generics.ListAPIView):
                 Q(description__icontains=search) |
                 Q(organization__name__icontains=search) |
                 Q(location__icontains=search) |
-                Q(type__icontains=search)
+                Q(type__name__icontains=search)
             )
             logger.info(f"EventFilterView: Filtrado por búsqueda, {queryset.count()} eventos")
 
         logger.info(f"EventFilterView: Resultado final: {queryset.count()} eventos")
         return queryset
-
-class OrganizationListView(generics.ListAPIView):
-    queryset = Organization.objects.all()
-    serializer_class = OrganizationSerializer
-
-class CategoryListView(generics.ListAPIView):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
-
 
 #para las vistas de los post, update, get y delete de los modelos
 class EventViewSet(viewsets.ModelViewSet):
@@ -103,3 +94,7 @@ class CategoryViewSet(viewsets.ModelViewSet):  # Habilita POST/PUT/DELETE
 class OrganizationViewSet(viewsets.ModelViewSet):  # Habilita POST/PUT/DELETE
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
+
+class TypeViewSet(viewsets.ModelViewSet):  # Habilita POST/PUT/DELETE
+    queryset = Type.objects.all()
+    serializer_class = TypeSerializer
